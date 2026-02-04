@@ -86,7 +86,7 @@ def circular_brush(radius):
 
 def rasterize(p0, p1, p2, p3, samples, width):
 
-    scale = 2
+    scale = 6
 
     p0 = (p0[0] * scale, p0[1] * scale)
     p1 = (p1[0] * scale, p1[1] * scale)
@@ -244,26 +244,14 @@ def rasterize(p0, p1, p2, p3, samples, width):
 # ======================================================
 
 def flip_x(p):
-    """Flip horizontally"""
-    return [
-        [p[0][1], p[0][0]],
-        [p[1][1], p[1][0]]
-    ]
+    return [row[::-1] for row in p]
 
 
 def flip_y(p):
-    """Flip vertically"""
-    return [
-        [p[1][0], p[1][1]],
-        [p[0][0], p[0][1]]
-    ]
+    return p[::-1]
 
 
 def variants(pattern):
-    """
-    Generate only Minecraft-valid variants:
-    original + flips (no rotation)
-    """
 
     v0 = pattern
     v1 = flip_x(v0)
@@ -272,7 +260,6 @@ def variants(pattern):
 
     out = [v0, v1, v2, v3]
 
-    # Deduplicate
     unique = []
 
     for v in out:
@@ -282,43 +269,95 @@ def variants(pattern):
     return unique
 
 
+# ======================================================
+# 6x6 Block Patterns (Minecraft Parts)
+# ======================================================
+
 BASE_BLOCKS = {
 
-    "full": [
-        [1, 1],
-        [1, 1]
-    ],
-
-    "slab": [
-        [1, 1],
-        [0, 0]
-    ],
-
-    "shelf": [
-        [1, 0],
-        [1, 0]
-    ],
-
-    "stair": [
-        [1, 0],
-        [1, 1]
-    ],
-
+    # Empty
     "empty": [
-        [0, 0],
-        [0, 0]
+        "______",
+        "______",
+        "______",
+        "______",
+        "______",
+        "______",
+    ],
+
+    # Full block
+    "full": [
+        "######",
+        "######",
+        "######",
+        "######",
+        "######",
+        "######",
+    ],
+
+    # Shelf
+    "shelf": [
+        "##____",
+        "##____",
+        "##____",
+        "##____",
+        "##____",
+        "##____",
+    ],
+
+    # Stair
+    "stair": [
+        "###___",
+        "###___",
+        "###___",
+        "######",
+        "######",
+        "######",
+    ],
+
+    # Open trapdoor (vertical)
+    "trapdoor_open": [
+        "#_____",
+        "#_____",
+        "#_____",
+        "#_____",
+        "#_____",
+        "#_____",
+    ],
+
+    # Closed trapdoor (horizontal)
+    "trapdoor_closed": [
+        "______",
+        "______",
+        "______",
+        "______",
+        "______",
+        "######",
     ],
 }
 
+
+def pattern_to_bits(pat):
+    """
+    '#' -> 1
+    '_' -> 0
+    """
+
+    out = []
+
+    for row in pat:
+        out.append([1 if c == "#" else 0 for c in row])
+
+    return out
 
 BLOCK_LIBRARY = []
 
 for name, pat in BASE_BLOCKS.items():
 
-    for v in variants(pat):
+    bits = pattern_to_bits(pat)
 
+    for v in variants(bits):
         BLOCK_LIBRARY.append((name, v))
-
 
 # ======================================================
 # Tile Matching
@@ -328,8 +367,8 @@ def tile_error(a, b):
 
     err = 0
 
-    for y in range(2):
-        for x in range(2):
+    for y in range(6):
+        for x in range(6):
 
             if a[y][x] != b[y][x]:
                 err += 1
@@ -340,7 +379,7 @@ def tile_error(a, b):
 def best_block(tile):
 
     best = None
-    best_err = 10
+    best_err = 10**9
 
     for name, pat in BLOCK_LIBRARY:
 
@@ -348,13 +387,9 @@ def best_block(tile):
 
         if e < best_err:
             best_err = e
-            best = (name, pat)
+            best = name
 
-            if e == 0:
-                break
-
-    return best, best_err
-
+    return best
 
 # ======================================================
 # Bitmap → Tiles
@@ -390,22 +425,24 @@ def bitmap_to_blocks(bmp):
 
     blocks = []
 
-    for y in range(0, h, 2):
+    TILE = 6
+
+    for y in range(0, h, TILE):
 
         row = []
 
-        for x in range(0, w, 2):
+        for x in range(0, w, TILE):
 
             tile = [
                 [
                     bmp[y + dy][x + dx]
                     if y + dy < h and x + dx < w else 0
-                    for dx in range(2)
+                    for dx in range(TILE)
                 ]
-                for dy in range(2)
+                for dy in range(TILE)
             ]
 
-            (name, pat), err = best_block(tile)
+            name = best_block(tile)
 
             row.append(name)
 
@@ -422,22 +459,22 @@ def print_blocks(blocks):
 
     char_map = {
         "full": "F",
-        "slab": "S",
         "shelf": "H",
         "stair": "T",
-        "empty": " "
+        "trapdoor_open": "O",
+        "trapdoor_closed": "C",
+        "empty": " ",
     }
-
     # Reverse rows so higher Y is at top
     for row in reversed(blocks):
 
         print("".join(char_map[b] for b in row))
 
-    print("\nLegend:")
     print("F = Full")
-    print("S = Slab")
     print("H = Shelf")
     print("T = Stair")
+    print("O = Open Trapdoor")
+    print("C = Closed Trapdoor")
 
 
 # ======================================================
