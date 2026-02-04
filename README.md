@@ -36,40 +36,40 @@ OF
               TT                                                                     
                TT                                                                    
                 TFC                                                                  
-                 HFC                                                                 
-                  HFT                                                                
+                 SFS                                                                 
+                  HFS                                                                
                     TT                                                               
                      TFC                                                             
-                      CFT                                                            
+                      SFS                                                            
                         TT                                                           
-                         TFC                                                         
+                         SFS                                                         
                           CFT                                                        
-                            TFC                                                      
+                            TFS                                                      
                              CTTC                                                    
-                               TFT                                                   
-                                 TFC                                                 
-                                  CFTC                                               
-                                    TFT                                              
-                                      TFT                                            
-                                        TFT                                          
-                                         CTFT                                        
-                                           CTFT                                      
-                                             CTFT                                    
-                                               CTFTC                                 
-                                                  TFTC                               
-                                                    CTFT                             
+                               SFS                                                   
+                                 TFS                                                 
+                                  SFTC                                               
+                                    SFT                                              
+                                      SFS                                            
+                                        TFS                                          
+                                         CTFS                                        
+                                           CTFS                                      
+                                             CTFS                                    
+                                               CSFTC                                 
+                                                  SFTS                               
+                                                    STFS                             
                                                       CTFTC                          
-                                                         TTFTC                       
-                                                           CTFTC                     
-                                                              CTFTCC                 
-                                                                 CTFFTC              
-                                                                    CTFFTTC          
-                                                                        CTFFFTTCCC   
-                                                                            CCTTFFFFO
+                                                         STFSC                       
+                                                           CSFTS                     
+                                                              CSFTSC                 
+                                                                 CSFFSC              
+                                                                    CSFFTSC          
+                                                                        SSFFFSSSCC   
+                                                                            CSSSFFFFO
 F = Full
+S = Slab
 H = Shelf
 T = Stair
 O = Open Trapdoor
 C = Closed Trapdoor
-
 ```

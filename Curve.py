@@ -232,7 +232,7 @@ def rasterize(p0, p1, p2, p3, samples, width):
             for x in range(x0, x1 + 1):
                 pixels.add((x, y))
 
-    return pixels
+    return pixels, pts
 
 
 # ======================================================
@@ -295,6 +295,16 @@ BASE_BLOCKS = {
         "######",
     ],
 
+    # Slab
+    "slab": [
+        "______",
+        "______",
+        "______",
+        "######",
+        "######",
+        "######",
+    ],
+
     # Shelf
     "shelf": [
         "##____",
@@ -336,6 +346,15 @@ BASE_BLOCKS = {
     ],
 }
 
+VERTICAL_BLOCKS = {
+    "shelf",
+    "trapdoor_open",
+}
+
+HORIZONTAL_BLOCKS = {
+    "trapdoor_closed",
+    "slab",   # future-proof
+}
 
 def pattern_to_bits(pat):
     """
@@ -376,18 +395,48 @@ def tile_error(a, b):
     return err
 
 
-def best_block(tile):
+def best_block(tile, dx, dy):
 
     best = None
     best_err = 10**9
+    best_bias = -1  # higher = better
+
+    # Direction strength
+    ax = abs(dx)
+    ay = abs(dy)
+
+    # Which way is closer?
+    prefer_vertical = ay > ax
+    prefer_horizontal = ax > ay
 
     for name, pat in BLOCK_LIBRARY:
 
-        e = tile_error(tile, pat)
+        err = tile_error(tile, pat)
 
-        if e < best_err:
-            best_err = e
+        if err > best_err:
+            continue
+
+        # Direction bias
+        bias = 0
+
+        if prefer_vertical and name in VERTICAL_BLOCKS:
+            bias = 1
+
+        elif prefer_horizontal and name in HORIZONTAL_BLOCKS:
+            bias = 1
+
+        # Better error → always wins
+        if err < best_err:
+
             best = name
+            best_err = err
+            best_bias = bias
+
+        # Same error → use bias
+        elif err == best_err and bias > best_bias:
+
+            best = name
+            best_bias = bias
 
     return best
 
@@ -418,7 +467,7 @@ def pixels_to_bitmap(pixels):
     return bmp
 
 
-def bitmap_to_blocks(bmp):
+def bitmap_to_blocks(bmp, pts):
 
     h = len(bmp)
     w = len(bmp[0])
@@ -442,7 +491,14 @@ def bitmap_to_blocks(bmp):
                 for dy in range(TILE)
             ]
 
-            name = best_block(tile)
+            # Tile center (in bitmap coords)
+            cx = x + TILE // 2
+            cy = y + TILE // 2
+
+            # Estimate tangent
+            dx, dy = estimate_tangent(pts, cx, cy)
+
+            name = best_block(tile, dx, dy)
 
             row.append(name)
 
@@ -450,6 +506,27 @@ def bitmap_to_blocks(bmp):
 
     return blocks
 
+def estimate_tangent(pts, cx, cy, radius=10):
+    """
+    Estimate tangent near (cx, cy) by finding nearby curve points.
+    Returns (dx, dy).
+    """
+
+    close = []
+
+    for x, y in pts:
+
+        if abs(x - cx) <= radius and abs(y - cy) <= radius:
+            close.append((x, y))
+
+    if len(close) < 2:
+        return 0, 0
+
+    # Use first and last nearby point
+    x0, y0 = close[0]
+    x1, y1 = close[-1]
+
+    return x1 - x0, y1 - y0
 
 # ======================================================
 # Display
@@ -459,6 +536,7 @@ def print_blocks(blocks):
 
     char_map = {
         "full": "F",
+        "slab": "S",
         "shelf": "H",
         "stair": "T",
         "trapdoor_open": "O",
@@ -471,6 +549,7 @@ def print_blocks(blocks):
         print("".join(char_map[b] for b in row))
 
     print("F = Full")
+    print("S = Slab")
     print("H = Shelf")
     print("T = Stair")
     print("O = Open Trapdoor")
@@ -509,7 +588,7 @@ def main():
     p2 = tuple(args.p2)
     p3 = tuple(args.p3)
 
-    pixels = rasterize(
+    pixels, pts = rasterize(
         p0, p1, p2, p3,
         args.samples,
         args.width
@@ -517,7 +596,7 @@ def main():
 
     bmp = pixels_to_bitmap(pixels)
 
-    blocks = bitmap_to_blocks(bmp)
+    blocks = bitmap_to_blocks(bmp, pts)
 
     print_blocks(blocks)
 
