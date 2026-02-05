@@ -1,4 +1,5 @@
 import argparse
+from collections import defaultdict
 import math
 import matplotlib.pyplot as plt
 
@@ -1046,6 +1047,103 @@ def print_legend(char_map, theme_colors, use_color):
 
         print(f"{sym:8} {names[block]}")
 
+from collections import defaultdict
+
+
+def print_bill_of_materials(blocks, char_map, theme_colors, use_color):
+    """
+    Print a bill of materials (block counts).
+    Open/closed trapdoors are merged.
+    """
+
+    counts = defaultdict(int)
+
+    # ----------------------------------
+    # Count block types (normalize names)
+    # ----------------------------------
+
+    for row in blocks:
+        for name, _ in row:
+
+            if name == "empty":
+                continue
+
+            # Merge trapdoors
+            if name in ("trapdoor_open", "trapdoor_closed"):
+                name = "trapdoor"
+
+            counts[name] += 1
+
+
+    # ----------------------------------
+    # Friendly names
+    # ----------------------------------
+
+    names = {
+        "full": "Full block",
+        "slab": "Slab",
+        "shelf": "Shelf",
+        "stair": "Stair",
+        "trapdoor": "Trapdoor",
+    }
+
+
+    print("\nBill of Materials:")
+
+    total = 0
+
+
+    # ----------------------------------
+    # Print rows
+    # ----------------------------------
+
+    for name in sorted(counts.keys()):
+
+        count = counts[name]
+        total += count
+
+        # Representative symbol
+        sym = None
+
+        for (n, _), ch in char_map.items():
+
+            if n == name or (
+                name == "trapdoor"
+                and n in ("trapdoor_open", "trapdoor_closed")
+            ):
+                if ch != " ":
+                    sym = ch
+                    break
+
+        if sym is None:
+            sym = "?"
+
+        # Colorize
+        if use_color:
+
+            # Trapdoor color: use open variant
+            color_name = (
+                "trapdoor_open"
+                if name == "trapdoor"
+                else name
+            )
+
+            color = theme_colors.get(color_name, "")
+            reset = ANSI_RESET if color else ""
+
+            sym = f"{color}{sym}{reset}"
+
+        label = names.get(name, name)
+
+        print(f"  {sym:3} {label:16} {count:6}")
+
+
+    # ----------------------------------
+    # Total (aligned)
+    # ----------------------------------
+
+    print(f"\n  {'':3} {'Total':16} {total:6}")
+
 # ======================================================
 # CLI
 # ======================================================
@@ -1129,6 +1227,13 @@ def main():
         theme_colors,
         use_color=args.color,
         grid=args.grid
+    )
+
+    print_bill_of_materials(
+        blocks,
+        char_map,
+        theme_colors,
+        args.color
     )
 
 
