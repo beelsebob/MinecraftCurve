@@ -756,6 +756,29 @@ ASCII_MAP = {
     ("empty", "none"): " ",
 }
 
+HTML_COLORS = {
+
+    "dark": {
+        "full": "#eeeeee",
+        "slab": "#5599ff",
+        "shelf": "#55ff55",
+        "stair": "#ffff55",
+        "trapdoor_open": "#ff5555",
+        "trapdoor_closed": "#ff5555",
+        "empty": None,
+    },
+
+    "light": {
+        "full": "#000000",
+        "slab": "#3366cc",
+        "shelf": "#228822",
+        "stair": "#aa8800",
+        "trapdoor_open": "#cc3333",
+        "trapdoor_closed": "#cc3333",
+        "empty": None,
+    }
+}
+
 def block_to_char(name, pat, char_map):
     """
     Return RAW character only (no color).
@@ -775,8 +798,20 @@ def colorize(ch, block_name, use_color, theme_colors):
 
     return f"{color}{ch}{reset}"
 
+def html_colorize(ch, block_name, theme):
+
+    if ch == " ":
+        return ch
+
+    color = HTML_COLORS[theme].get(block_name)
+
+    if not color:
+        return ch
+
+    return f'<span style="color:{color}">{ch}</span>'
+
 def print_blocks(blocks, offset, char_map, theme_colors,
-                 use_color=False, grid=5):
+                 use_color=False, grid=5, export_md=False, theme="dark"):
 
     print("\nMinecraft Blocks:\n")
 
@@ -923,7 +958,10 @@ def print_blocks(blocks, offset, char_map, theme_colors,
             if i % 2 == 0 and bi < len(block_names):
 
                 name = block_names[bi]
-                colored.append(colorize(ch, name, use_color, theme_colors))
+                if export_md:
+                    colored.append(html_colorize(ch, name, theme))
+                else:
+                    colored.append(colorize(ch, name, use_color, theme_colors))
 
                 bi += 1
 
@@ -987,10 +1025,9 @@ def print_blocks(blocks, offset, char_map, theme_colors,
     print(pad + "".join(marker))
     print(pad + "".join(label))
 
-    print_legend(char_map, theme_colors, use_color)
 
-
-def print_legend(char_map, theme_colors, use_color):
+def print_legend(char_map, theme_colors, use_color,
+                 export_md=False, theme="dark"):
     """
     Print legend based on active character map and colors.
     """
@@ -1031,7 +1068,14 @@ def print_legend(char_map, theme_colors, use_color):
                 continue
 
             # Colorize if needed
-            if use_color:
+            if export_md:
+
+                color = HTML_COLORS[theme].get(name)
+
+                if color:
+                    ch = f'<span style="color:{color}">{ch}</span>'
+
+            elif use_color:
 
                 color = theme_colors.get(name, "")
                 reset = ANSI_RESET if color else ""
@@ -1050,7 +1094,8 @@ def print_legend(char_map, theme_colors, use_color):
 from collections import defaultdict
 
 
-def print_bill_of_materials(blocks, char_map, theme_colors, use_color):
+def print_bill_of_materials(blocks, char_map, theme_colors, use_color,
+                            export_md=False, theme="dark"):
     """
     Print a bill of materials (block counts).
     Open/closed trapdoors are merged.
@@ -1119,14 +1164,20 @@ def print_bill_of_materials(blocks, char_map, theme_colors, use_color):
             sym = "?"
 
         # Colorize
-        if use_color:
+        color_name = (
+            "trapdoor_open"
+            if name == "trapdoor"
+            else name
+        )
 
-            # Trapdoor color: use open variant
-            color_name = (
-                "trapdoor_open"
-                if name == "trapdoor"
-                else name
-            )
+        if export_md:
+
+            color = HTML_COLORS[theme].get(color_name)
+
+            if color:
+                sym = f'<span style="color:{color}">{sym}</span>'
+
+        elif use_color:
 
             color = theme_colors.get(color_name, "")
             reset = ANSI_RESET if color else ""
@@ -1195,6 +1246,12 @@ def parse_args():
         default="dark",
         help="Color theme (dark or light background)"
     )
+
+    p.add_argument(
+        "--export-markdown",
+        action="store_true",
+        help="Output colored Markdown/HTML for README"
+    )
     return p.parse_args()
 
 
@@ -1216,6 +1273,9 @@ def main():
         args.samples,
         args.width
     )
+
+    if args.export_markdown:
+        args.color = False
 
     bmp, offx, offy = pixels_to_bitmap(pixels)
 
@@ -1249,21 +1309,30 @@ def main():
     # Select color theme
     theme_colors = ANSI_THEMES[args.theme]
 
+    # Markdown wrapper
+    if args.export_markdown:
+        print('<pre style="background:#111;color:#eee;padding:1em;overflow:auto">')
+    
     print_blocks(
         blocks,
         offset,
         char_map,
         theme_colors,
         use_color=args.color,
-        grid=args.grid
+        grid=args.grid,
+        export_md=args.export_markdown,
+        theme=args.theme
     )
-
+    print_legend(char_map, theme_colors, use_color=args.color)
     print_bill_of_materials(
         blocks,
         char_map,
         theme_colors,
         args.color
     )
+
+    if args.export_markdown:
+        print('</pre>')
 
 
 if __name__ == "__main__":

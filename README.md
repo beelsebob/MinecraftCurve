@@ -5,71 +5,82 @@ Creates curves using Minecraft blocks.
 - matplotlib
 
 ## Example
-```
-(venv) MinecraftCurve % python3 Curve.py --p0 400 162 --p1 400 132 --p2 463 104 --p3 483 104 --width 1.5
-FO                                                                                   
-FO                                                                                   
-FH                                                                                   
-FH                                                                                   
-TT                                                                                   
-HT                                                                                   
-OF                                                                                   
- FH                                                                                  
- TT                                                                                  
- OF                                                                                  
-  TH                                                                                 
-  HF                                                                                 
-   TH                                                                                
-   HF                                                                                
-    TT                                                                               
-     FH                                                                              
-     HT                                                                              
-      TT                                                                             
-       FH                                                                            
-       HF                                                                            
-        HF                                                                           
-         TT                                                                          
-          TT                                                                         
-           TT                                                                        
-            TT                                                                       
-             TT                                                                      
-              TT                                                                     
-               TT                                                                    
-                TFC                                                                  
-                 SFS                                                                 
-                  HFS                                                                
-                    TT                                                               
-                     TFC                                                             
-                      SFS                                                            
-                        TT                                                           
-                         SFS                                                         
-                          CFT                                                        
-                            TFS                                                      
-                             CTTC                                                    
-                               SFS                                                   
-                                 TFS                                                 
-                                  SFTC                                               
-                                    SFT                                              
-                                      SFS                                            
-                                        TFS                                          
-                                         CTFS                                        
-                                           CTFS                                      
-                                             CTFS                                    
-                                               CSFTC                                 
-                                                  SFTS                               
-                                                    STFS                             
-                                                      CTFTC                          
-                                                         STFSC                       
-                                                           CSFTS                     
-                                                              CSFTSC                 
-                                                                 CSFFSC              
-                                                                    CSFFTSC          
-                                                                        SSFFFSSSCC   
-                                                                            CSSSFFFFO
-F = Full
-S = Slab
-H = Shelf
-T = Stair
-O = Open Trapdoor
-C = Closed Trapdoor
-```
+<pre style="background:#111;color:#eee;padding:1em;overflow:auto">
+
+Minecraft Blocks:
+
+ 161   <span style="color:#000000">█</span> <span style="color:#cc3333">▏</span>       │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 160   <span style="color:#000000">█</span> <span style="color:#cc3333">▏</span> ══════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═══════╪
+ 159   <span style="color:#000000">█</span> <span style="color:#cc3333">▏</span>       │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 158   <span style="color:#000000">█</span> <span style="color:#228822">▍</span>       │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 157   <span style="color:#aa8800">▜</span> <span style="color:#228822">▍</span>       │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 156   <span style="color:#228822">▐</span> <span style="color:#aa8800">▙</span>       │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 155   <span style="color:#228822">▐</span> <span style="color:#000000">█</span> ══════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═══════╪
+ 154   <span style="color:#cc3333">▕</span> <span style="color:#000000">█</span>       │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 153   │ <span style="color:#000000">█</span> <span style="color:#228822">▍</span>     │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 152   │ <span style="color:#aa8800">▜</span> <span style="color:#aa8800">▙</span>     │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 151   │ <span style="color:#228822">▐</span> <span style="color:#000000">█</span>     │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 150   ╪══ <span style="color:#000000">█</span> <span style="color:#228822">▍</span> ══╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═══════╪
+ 149   │   <span style="color:#aa8800">▜</span> <span style="color:#aa8800">▙</span>   │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 148   │   <span style="color:#cc3333">▕</span> <span style="color:#000000">█</span> <span style="color:#cc3333">▏</span> │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 147   │     <span style="color:#aa8800">▜</span> <span style="color:#aa8800">▙</span> │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 146   │     <span style="color:#cc3333">▕</span> <span style="color:#000000">█</span> <span style="color:#cc3333">▏</span>         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 145   ╪══════ <span style="color:#aa8800">▜</span> <span style="color:#aa8800">▙</span> ════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═══════╪
+ 144   │         <span style="color:#000000">█</span> <span style="color:#228822">▍</span>       │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 143   │         <span style="color:#228822">▐</span> <span style="color:#000000">█</span>       │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 142   │         │ <span style="color:#aa8800">▜</span> <span style="color:#aa8800">▙</span>     │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 141   │         │   <span style="color:#000000">█</span> <span style="color:#228822">▍</span>   │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 140   ╪═════════╪══ <span style="color:#228822">▐</span> <span style="color:#000000">█</span> <span style="color:#228822">▍</span> ╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═══════╪
+ 139   │         │     <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 138   │         │       <span style="color:#aa8800">▜</span> <span style="color:#aa8800">▙</span>         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 137   │         │         <span style="color:#aa8800">▜</span> <span style="color:#aa8800">▙</span>       │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 136   │         │         │ <span style="color:#aa8800">▜</span> <span style="color:#aa8800">▙</span>     │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 135   ╪═════════╪═════════╪══ <span style="color:#aa8800">▜</span> <span style="color:#aa8800">▙</span> ══╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═══════╪
+ 134   │         │         │     <span style="color:#aa8800">▜</span> <span style="color:#aa8800">▙</span> │         │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 133   │         │         │       <span style="color:#aa8800">▜</span> <span style="color:#000000">█</span> <span style="color:#cc3333">▁</span>       │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 132   │         │         │         <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#3366cc">▄</span>     │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 131   │         │         │         │ <span style="color:#228822">▐</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span>   │         │         │         │         │         │         │         │         │         │         │         │         │        
+ 130   ╪═════════╪═════════╪═════════╪════ <span style="color:#aa8800">▜</span> <span style="color:#aa8800">▙</span> ╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═══════╪
+ 129   │         │         │         │       <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#3366cc">▄</span>       │         │         │         │         │         │         │         │         │         │         │         │        
+ 128   │         │         │         │         <span style="color:#cc3333">▔</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span>     │         │         │         │         │         │         │         │         │         │         │         │        
+ 127   │         │         │         │         │   <span style="color:#aa8800">▜</span> <span style="color:#000000">█</span> <span style="color:#3366cc">▄</span> │         │         │         │         │         │         │         │         │         │         │         │        
+ 126   │         │         │         │         │     <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span>         │         │         │         │         │         │         │         │         │         │         │        
+ 125   ╪═════════╪═════════╪═════════╪═════════╪════════ <span style="color:#aa8800">▜</span> <span style="color:#000000">█</span> <span style="color:#3366cc">▄</span> ════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═══════╪
+ 124   │         │         │         │         │         │ <span style="color:#cc3333">▔</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span> <span style="color:#cc3333">▁</span> │         │         │         │         │         │         │         │         │         │         │        
+ 123   │         │         │         │         │         │     <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span> <span style="color:#cc3333">▁</span>       │         │         │         │         │         │         │         │         │         │        
+ 122   │         │         │         │         │         │         <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span> <span style="color:#cc3333">▁</span>   │         │         │         │         │         │         │         │         │         │        
+ 121   │         │         │         │         │         │         │   <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span> <span style="color:#cc3333">▁</span>         │         │         │         │         │         │         │         │         │        
+ 120   ╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪══════ <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span> <span style="color:#cc3333">▁</span> ════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═══════╪
+ 119   │         │         │         │         │         │         │         │ <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span> <span style="color:#cc3333">▁</span> │         │         │         │         │         │         │         │         │        
+ 118   │         │         │         │         │         │         │         │     <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#000000">█</span> <span style="color:#3366cc">▄</span>       │         │         │         │         │         │         │         │        
+ 117   │         │         │         │         │         │         │         │         <span style="color:#cc3333">▔</span> <span style="color:#aa8800">▜</span> <span style="color:#000000">█</span> <span style="color:#3366cc">▄</span> <span style="color:#cc3333">▁</span> │         │         │         │         │         │         │         │        
+ 116   │         │         │         │         │         │         │         │         │   <span style="color:#cc3333">▔</span> <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span> <span style="color:#3366cc">▄</span>       │         │         │         │         │         │         │        
+ 115   ╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪════════ <span style="color:#3366cc">▀</span> <span style="color:#aa8800">▜</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span> <span style="color:#cc3333">▁</span> ╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═══════╪
+ 114   │         │         │         │         │         │         │         │         │         │     <span style="color:#3366cc">▀</span> <span style="color:#aa8800">▜</span> <span style="color:#000000">█</span> <span style="color:#3366cc">▄</span> <span style="color:#cc3333">▁</span>     │         │         │         │         │         │        
+ 113   │         │         │         │         │         │         │         │         │         │         <span style="color:#cc3333">▔</span> <span style="color:#3366cc">▀</span> <span style="color:#aa8800">▜</span> <span style="color:#000000">█</span> <span style="color:#3366cc">▄</span> <span style="color:#cc3333">▁</span>         │         │         │         │         │        
+ 112   │         │         │         │         │         │         │         │         │         │         │     <span style="color:#cc3333">▔</span> <span style="color:#3366cc">▀</span> <span style="color:#aa8800">▜</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span> <span style="color:#3366cc">▄</span> <span style="color:#cc3333">▁</span> │         │         │         │         │        
+ 111   │         │         │         │         │         │         │         │         │         │         │         │   <span style="color:#3366cc">▀</span> <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#000000">█</span> <span style="color:#3366cc">▄</span> <span style="color:#3366cc">▄</span>     │         │         │         │        
+ 110   ╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪════════ <span style="color:#cc3333">▔</span> <span style="color:#3366cc">▀</span> <span style="color:#aa8800">▜</span> <span style="color:#000000">█</span> <span style="color:#000000">█</span> <span style="color:#3366cc">▄</span> <span style="color:#3366cc">▄</span> <span style="color:#cc3333">▁</span> ════╪═════════╪═════════╪═══════╪
+ 109   │         │         │         │         │         │         │         │         │         │         │         │         │       <span style="color:#cc3333">▔</span> <span style="color:#3366cc">▀</span> <span style="color:#aa8800">▜</span> <span style="color:#000000">█</span> <span style="color:#000000">█</span> <span style="color:#aa8800">▙</span> <span style="color:#3366cc">▄</span> <span style="color:#3366cc">▄</span> <span style="color:#cc3333">▁</span>     │         │        
+ 108   │         │         │         │         │         │         │         │         │         │         │         │         │         │     <span style="color:#cc3333">▔</span> <span style="color:#cc3333">▔</span> <span style="color:#3366cc">▀</span> <span style="color:#aa8800">▜</span> <span style="color:#000000">█</span> <span style="color:#000000">█</span> <span style="color:#000000">█</span> <span style="color:#3366cc">▄</span> <span style="color:#3366cc">▄</span> <span style="color:#3366cc">▄</span> <span style="color:#3366cc">▄</span> <span style="color:#cc3333">▁</span> <span style="color:#cc3333">▁</span>        
+ 107   │         │         │         │         │         │         │         │         │         │         │         │         │         │         │       <span style="color:#cc3333">▔</span> <span style="color:#3366cc">▀</span> <span style="color:#3366cc">▀</span> <span style="color:#3366cc">▀</span> <span style="color:#3366cc">▀</span> <span style="color:#000000">█</span> <span style="color:#000000">█</span> <span style="color:#000000">█</span> <span style="color:#000000">█</span> <span style="color:#000000">█</span> <span style="color:#cc3333">▏</span>
+       ╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═════════╪═══════╪
+       399       404       409       414       419       424       429       434       439       444       449       454       459       464       469       474       479      
+
+Legend:
+█        Full block
+▀ ▄      Slab
+▍ ▐      Shelf
+▙ ▛ ▜ ▟  Stair
+▏ ▕      Open trapdoor
+▁ ▔      Closed trapdoor
+
+Bill of Materials:
+  █   Full block           52
+  ▍   Shelf                13
+  ▄   Slab                 44
+  ▙   Stair                48
+  ▁   Trapdoor             36
+
+      Total               193
+</pre>
