@@ -398,14 +398,13 @@ def tile_error(a, b):
 def best_block(tile, dx, dy):
 
     best = None
+    best_pat = None
     best_err = 10**9
-    best_bias = -1  # higher = better
+    best_bias = -1
 
-    # Direction strength
     ax = abs(dx)
     ay = abs(dy)
 
-    # Which way is closer?
     prefer_vertical = ay > ax
     prefer_horizontal = ax > ay
 
@@ -416,29 +415,21 @@ def best_block(tile, dx, dy):
         if err > best_err:
             continue
 
-        # Direction bias
         bias = 0
 
         if prefer_vertical and name in VERTICAL_BLOCKS:
             bias = 1
-
         elif prefer_horizontal and name in HORIZONTAL_BLOCKS:
             bias = 1
 
-        # Better error → always wins
-        if err < best_err:
+        if err < best_err or (err == best_err and bias > best_bias):
 
             best = name
+            best_pat = pat
             best_err = err
             best_bias = bias
 
-        # Same error → use bias
-        elif err == best_err and bias > best_bias:
-
-            best = name
-            best_bias = bias
-
-    return best
+    return best, best_pat
 
 # ======================================================
 # Bitmap → Tiles
@@ -458,14 +449,10 @@ def pixels_to_bitmap(pixels):
     bmp = [[0] * w for _ in range(h)]
 
     for x, y in pixels:
+        bmp[y - miny][x - minx] = 1
 
-        bx = x - minx
-        by = y - miny
-
-        bmp[by][bx] = 1
-
-    return bmp
-
+    # Return offset too
+    return bmp, minx, miny
 
 def bitmap_to_blocks(bmp, pts):
 
@@ -498,9 +485,8 @@ def bitmap_to_blocks(bmp, pts):
             # Estimate tangent
             dx, dy = estimate_tangent(pts, cx, cy)
 
-            name = best_block(tile, dx, dy)
-
-            row.append(name)
+            name, pat = best_block(tile, dx, dy)
+            row.append((name, pat))
 
         blocks.append(row)
 
@@ -532,29 +518,461 @@ def estimate_tangent(pts, cx, cy, radius=10):
 # Display
 # ======================================================
 
-def print_blocks(blocks):
+def block_to_unicode(name, pat):
 
-    char_map = {
-        "full": "F",
-        "slab": "S",
-        "shelf": "H",
-        "stair": "T",
-        "trapdoor_open": "O",
-        "trapdoor_closed": "C",
-        "empty": " ",
+    H = len(pat)
+    W = len(pat[0])
+
+    # Remember: pat is Y-down, output is Y-up
+
+    top_rows = pat[H//2:]      # visually top
+    bottom_rows = pat[:H//2]   # visually bottom
+
+    left_cols = [row[:W//2] for row in pat]
+    right_cols = [row[W//2:] for row in pat]
+
+    def count(block):
+        return sum(sum(row) for row in block)
+
+    top_fill = count(top_rows)
+    bottom_fill = count(bottom_rows)
+    left_fill = count(left_cols)
+    right_fill = count(right_cols)
+
+    # ----------------------------------
+    # Empty
+    # ----------------------------------
+    if name == "empty":
+        return " "
+
+    # ----------------------------------
+    # Full
+    # ----------------------------------
+    if name == "full":
+        return "█"
+
+    # ----------------------------------
+    # Slab (top / bottom)
+    # ----------------------------------
+    if name == "slab":
+
+        if bottom_fill > top_fill:
+            return "▄"   # bottom slab
+        else:
+            return "▀"   # top slab
+
+    # ----------------------------------
+    # Closed trapdoor (top / bottom)
+    # ----------------------------------
+    if name == "trapdoor_closed":
+
+        if bottom_fill > top_fill:
+            return "▁"   # bottom thin
+        else:
+            return "▔"   # top thin
+
+    # ----------------------------------
+    # Shelf (left / right)
+    # ----------------------------------
+    if name == "shelf":
+
+        if left_fill > right_fill:
+            return "▍"
+        else:
+            return "▐"
+
+    # ----------------------------------
+    # Open trapdoor (left / right)
+    # ----------------------------------
+    if name == "trapdoor_open":
+
+        if left_fill > right_fill:
+            return "▏"
+        else:
+            return "▕"
+
+    # ----------------------------------
+    # Stair (quadrants)
+    # ----------------------------------
+    if name == "stair":
+
+        # Quadrants (remember Y flip)
+        tl = pat[-1][0]
+        tr = pat[-1][-1]
+        bl = pat[0][0]
+        br = pat[0][-1]
+
+        if bl and not br:
+            return "▛"
+        if br and not bl:
+            return "▜"
+        if tl and not tr:
+            return "▙"
+        if tr and not tl:
+            return "▟"
+
+        return "█"
+
+    # ----------------------------------
+    # Fallback
+    # ----------------------------------
+    return "?"
+
+def get_block_orientation(name, pat):
+    """
+    Returns orientation string depending on block type.
+    """
+
+    H = len(pat)
+    W = len(pat[0])
+
+    top = sum(sum(r) for r in pat[H//2:]) > sum(sum(r) for r in pat[:H//2])
+    left = sum(row[:W//2].count(1) for row in pat) > sum(row[W//2:].count(1) for row in pat)
+
+    # Slabs / closed trapdoors
+    if name in ("slab", "trapdoor_closed"):
+        return "top" if top else "bottom"
+
+    # Shelf / open trapdoors
+    if name in ("shelf", "trapdoor_open"):
+        return "left" if left else "right"
+
+    # Stair (quadrants)
+    if name == "stair":
+        if top and left:
+            return "tl"
+        elif top and not left:
+            return "tr"
+        elif not top and left:
+            return "bl"
+        else:
+            return "br"
+
+    return "none"
+
+# ======================================================
+# ANSI Color Themes
+# ======================================================
+
+ANSI_RESET = "\033[0m"
+
+ANSI_THEMES = {
+
+    # For dark terminals (default)
+    "dark": {
+        "full": "\033[97m",            # bright white
+        "slab": "\033[34m",            # blue
+        "shelf": "\033[92m",           # bright green
+        "stair": "\033[93m",           # yellow
+        "trapdoor_open": "\033[31m",   # red
+        "trapdoor_closed": "\033[31m", # red
+        "empty": "",
+    },
+
+    # For light terminals
+    "light": {
+        "full": "\033[30m",            # black
+        "slab": "\033[34m",            # blue
+        "shelf": "\033[32m",           # dark green
+        "stair": "\033[33m",           # brown/yellow
+        "trapdoor_open": "\033[31m",   # red
+        "trapdoor_closed": "\033[31m", # red
+        "empty": "",
     }
-    # Reverse rows so higher Y is at top
-    for row in reversed(blocks):
+}
 
-        print("".join(char_map[b] for b in row))
+UNICODE_MAP = {
+    ("full", "none"): "█",
 
-    print("F = Full")
-    print("S = Slab")
-    print("H = Shelf")
-    print("T = Stair")
-    print("O = Open Trapdoor")
-    print("C = Closed Trapdoor")
+    ("slab", "bottom"): "▄",
+    ("slab", "top"): "▔",
 
+    ("trapdoor_closed", "bottom"): "▁",
+    ("trapdoor_closed", "top"): "▔",
+
+    ("shelf", "left"): "▍",
+    ("shelf", "right"): "▐",
+
+    ("trapdoor_open", "left"): "▏",
+    ("trapdoor_open", "right"): "▕",
+
+    ("stair", "bl"): "▙",
+    ("stair", "br"): "▟",
+    ("stair", "tl"): "▛",
+    ("stair", "tr"): "▜",
+
+    ("empty", "none"): " ",
+}
+
+ASCII_MAP = {
+    ("full", "none"): "F",
+
+    ("slab", "bottom"): "S",
+    ("slab", "top"): "S",
+
+    ("trapdoor_closed", "bottom"): "C",
+    ("trapdoor_closed", "top"): "C",
+
+    ("shelf", "left"): "H",
+    ("shelf", "right"): "H",
+
+    ("trapdoor_open", "left"): "O",
+    ("trapdoor_open", "right"): "O",
+
+    ("stair", "bl"): "T",
+    ("stair", "br"): "T",
+    ("stair", "tl"): "T",
+    ("stair", "tr"): "T",
+
+    ("empty", "none"): " ",
+}
+
+def block_to_char(name, pat, char_map):
+    """
+    Return RAW character only (no color).
+    """
+
+    orient = get_block_orientation(name, pat)
+
+    return char_map.get((name, orient), " ")
+
+def colorize(ch, block_name, use_color, theme_colors):
+
+    if not use_color or ch == " ":
+        return ch
+
+    color = theme_colors.get(block_name, "")
+    reset = ANSI_RESET if color else ""
+
+    return f"{color}{ch}{reset}"
+
+def print_blocks(blocks, offset, char_map, theme_colors,
+                 use_color=False, grid=5):
+
+    print("\nMinecraft Blocks:\n")
+
+    # Flip vertically (Y up)
+    rows = list(reversed(blocks))
+
+    height = len(rows)
+    width = len(rows[0]) if rows else 0
+
+    max_y = height - 1
+
+    visual_width = width * 2 - 1 if width > 0 else 0
+
+    rendered = []
+
+    # --------------------------------------------------
+    # Helper: composite layers
+    # --------------------------------------------------
+
+    def composite(grid, block, knockout):
+
+        out = []
+
+        for g, b, k in zip(grid, block, knockout):
+
+            if b != " ":
+                out.append(b)
+
+            elif k:
+                out.append(" ")
+
+            else:
+                out.append(g)
+
+        return "".join(out)
+
+
+    # --------------------------------------------------
+    # Build rows
+    # --------------------------------------------------
+
+    for row_i, row in enumerate(rows):
+
+        # World Y coordinate
+        y = max_y - row_i + offset[1] // 6
+
+        # ==================================================
+        # 1) BLOCK LAYER
+        # ==================================================
+
+        block_chars = []
+
+        block_names = []
+
+        for (name, pat) in row:
+
+            ch = block_to_char(name, pat, char_map)
+
+            block_chars.append(ch)
+            block_names.append(name)
+
+        block_line = " ".join(block_chars)
+
+        # Pad
+        block = list(block_line.ljust(visual_width))
+
+
+        # ==================================================
+        # 2) GRID LAYER
+        # ==================================================
+
+        grid_line = [" "] * visual_width
+
+        if grid > 0:
+
+            # Vertical lines
+            for x in range(0, width, grid):
+
+                pos = x * 2
+
+                if pos < visual_width:
+                    grid_line[pos] = "│"
+
+            # Horizontal lines
+            if y % grid == 0:
+
+                for i in range(visual_width):
+                    grid_line[i] = "═"
+
+                # End caps
+                if visual_width > 0:
+                    grid_line[0] = "╪"
+                    grid_line[-1] = "╪"
+
+
+            # Intersections
+            for x in range(0, width, grid):
+
+                pos = x * 2
+
+                if pos < visual_width and y % grid == 0:
+                    grid_line[pos] = "╪"
+
+
+        grid_chars = grid_line
+
+
+        # ==================================================
+        # 3) KNOCKOUT MASK
+        # ==================================================
+
+        knockout = [False] * visual_width
+
+        # Find block positions
+        block_pos = set(
+            i for i, ch in enumerate(block)
+            if ch != " "
+        )
+
+        # Knock out grid within distance 1
+        for i in range(visual_width):
+
+            for j in (i - 1, i, i + 1):
+
+                if j in block_pos:
+                    knockout[i] = True
+                    break
+
+
+        # ==================================================
+        # 4) COMPOSITE
+        # ==================================================
+
+        raw_line = composite(grid_chars, block, knockout)
+
+        # Apply color AFTER layout
+        colored = []
+
+        bi = 0  # block index
+
+        for i, ch in enumerate(raw_line):
+
+            # Block positions are at even indices: 0,2,4,...
+            if i % 2 == 0 and bi < len(block_names):
+
+                name = block_names[bi]
+                colored.append(colorize(ch, name, use_color, theme_colors))
+
+                bi += 1
+
+            else:
+                colored.append(ch)
+
+        final_line = "".join(colored)
+
+        # ==================================================
+        # 5) Y LABEL
+        # ==================================================
+
+        if final_line.strip() == "":
+            rendered.append(f"{y:>4}")
+        else:
+            rendered.append(f"{y:>4}   {final_line}")
+
+
+    # --------------------------------------------------
+    # Print rows
+    # --------------------------------------------------
+
+    for r in rendered:
+        print(r)
+
+
+    # --------------------------------------------------
+    # X AXIS
+    # --------------------------------------------------
+
+    marker = ["═"] * visual_width
+    label = [" "] * visual_width
+
+    if grid > 0:
+
+        for x in range(0, width, grid):
+
+            pos = x * 2
+
+            if pos < visual_width:
+
+                marker[pos] = "╪"
+
+                world_x = x + offset[0] // 6
+
+                s = str(world_x)
+
+                for i, c in enumerate(s):
+
+                    if pos + i < visual_width:
+                        label[pos + i] = c
+
+    # End caps
+    if visual_width > 0:
+        marker[0] = "╪"
+        marker[-1] = "╪"
+
+
+    pad = " " * 7
+
+    print(pad + "".join(marker))
+    print(pad + "".join(label))
+
+
+    # --------------------------------------------------
+    # Legend
+    # --------------------------------------------------
+
+    print("\nLegend:")
+    print("█  Full")
+    print("▄▔ Slab")
+    print("▁▔ Closed Trapdoor")
+    print("▍▐ Shelf")
+    print("▏▕ Open Trapdoor")
+    print("▙▛▜▟ Stair")
+    print("│  Vertical grid")
+    print("═  Horizontal grid")
+    print("╪  Intersection")
 
 # ======================================================
 # CLI
@@ -571,7 +989,26 @@ def parse_args():
 
     p.add_argument("--samples", type=int, default=300)
     p.add_argument("--width", type=float, default=1.0)
+    p.add_argument("--grid", type=int, default=5)
+    p.add_argument(
+        "--style",
+        choices=["unicode", "ascii"],
+        default="unicode",
+        help="Output style (unicode or ascii)"
+    )
 
+    p.add_argument(
+        "--color",
+        action="store_true",
+        help="Enable ANSI color output"
+    )
+
+    p.add_argument(
+        "--theme",
+        choices=["dark", "light"],
+        default="dark",
+        help="Color theme (dark or light background)"
+    )
     return p.parse_args()
 
 
@@ -594,11 +1031,30 @@ def main():
         args.width
     )
 
-    bmp = pixels_to_bitmap(pixels)
+    bmp, offx, offy = pixels_to_bitmap(pixels)
 
     blocks = bitmap_to_blocks(bmp, pts)
 
-    print_blocks(blocks)
+    # Store offsets for printing
+    offset = (offx, offy)
+
+    # Select style
+    if args.style == "unicode":
+        char_map = UNICODE_MAP
+    else:
+        char_map = ASCII_MAP
+
+    # Select color theme
+    theme_colors = ANSI_THEMES[args.theme]
+
+    print_blocks(
+        blocks,
+        offset,
+        char_map,
+        theme_colors,
+        use_color=args.color,
+        grid=args.grid
+    )
 
 
 if __name__ == "__main__":
