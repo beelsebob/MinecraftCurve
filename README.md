@@ -84,3 +84,6 @@ Bill of Materials:
 
       Total               193
 </pre>
+
+And the resulting curve (twice):
+![Bridge](Bridge.jpg)
