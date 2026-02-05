@@ -6,7 +6,7 @@ Creates curves using Minecraft blocks.
 
 ## Example
 <pre style="background:#111;color:#eee;padding:1em;overflow:auto">
-
+> python3 Curve.py --p0 400 162 --p1 400 126 --p2 463 108 --p3 483 108 --width 1.5 --color --theme light
 Minecraft Blocks:
 
  161   <span style="color:#000000">█</span> <span style="color:#cc3333">▏</span>       │         │         │         │         │         │         │         │         │         │         │         │         │         │         │         │        
