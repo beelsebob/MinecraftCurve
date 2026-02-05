@@ -396,7 +396,7 @@ def tile_error(a, b):
     return err
 
 
-def best_block(tile, dx, dy):
+def best_block(tile, dx, dy, block_library):
 
     best = None
     best_pat = None
@@ -409,7 +409,7 @@ def best_block(tile, dx, dy):
     prefer_vertical = ay > ax
     prefer_horizontal = ax > ay
 
-    for name, pat in BLOCK_LIBRARY:
+    for name, pat in block_library:
 
         err = tile_error(tile, pat)
 
@@ -455,7 +455,7 @@ def pixels_to_bitmap(pixels):
     # Return offset too
     return bmp, minx, miny
 
-def bitmap_to_blocks(bmp, pts):
+def bitmap_to_blocks(bmp, pts, block_library):
 
     h = len(bmp)
     w = len(bmp[0])
@@ -486,7 +486,7 @@ def bitmap_to_blocks(bmp, pts):
             # Estimate tangent
             dx, dy = estimate_tangent(pts, cx, cy)
 
-            name, pat = best_block(tile, dx, dy)
+            name, pat = best_block(tile, dx, dy, block_library)
             row.append((name, pat))
 
         blocks.append(row)
@@ -521,7 +521,7 @@ def is_vertical_edge_block(name):
 def is_horizontal_edge_block(name):
     return name in ("full", "slab", "trapdoor_closed")
 
-def smooth_stair_edges(blocks, bmp, pts, max_extra_error=6):
+def smooth_stair_edges(blocks, bmp, pts, block_library, max_extra_error=6):
     """
     Replace repeated stairs with continuation blocks
     to keep edges smooth (vertical + horizontal).
@@ -584,7 +584,7 @@ def smooth_stair_edges(blocks, bmp, pts, max_extra_error=6):
         best = None
         best_err = 10**9
 
-        for name, pat in BLOCK_LIBRARY:
+        for name, pat in block_library:
 
             if name not in allowed_blocks:
                 continue
@@ -1139,10 +1139,12 @@ def print_bill_of_materials(blocks, char_map, theme_colors, use_color):
 
 
     # ----------------------------------
-    # Total (aligned)
+    # Total 
     # ----------------------------------
 
-    print(f"\n  {'':3} {'Total':16} {total:6}")
+    fmt = "  {:3} {:16} {:6}"
+
+    print("\n" + fmt.format("", "Total", total))
 
 # ======================================================
 # CLI
@@ -1157,6 +1159,20 @@ def parse_args():
     p.add_argument("--p2", nargs=2, type=int, required=True)
     p.add_argument("--p3", nargs=2, type=int, required=True)
 
+    p.add_argument(
+        "--exclude",
+        action="append",
+        default=[],
+        choices=[
+            "full",
+            "slab",
+            "shelf",
+            "stair",
+            "trapdoor_open",
+            "trapdoor_closed",
+        ],
+        help="Exclude a block type (can be repeated)"
+    )
     p.add_argument("--samples", type=int, default=300)
     p.add_argument("--width", type=float, default=1.0)
     p.add_argument("--grid", type=int, default=5)
@@ -1203,10 +1219,23 @@ def main():
 
     bmp, offx, offy = pixels_to_bitmap(pixels)
 
-    blocks = bitmap_to_blocks(bmp, pts)
+    excluded = set(args.exclude)
+    
+    # Filter block library
+    filtered_library = [
+        (name, pat)
+        for (name, pat) in BLOCK_LIBRARY
+        if name not in excluded
+    ]
+
+    if not filtered_library:
+        print("Error: All block types excluded.")
+        sys.exit(1)
+    
+    blocks = bitmap_to_blocks(bmp, pts, filtered_library)
 
     # Smooth ugly stair edges
-    smooth_stair_edges(blocks, bmp, pts)
+    smooth_stair_edges(blocks, bmp, pts, filtered_library)
 
     # Store offsets for printing
     offset = (offx, offy)
