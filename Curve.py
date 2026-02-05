@@ -514,109 +514,137 @@ def estimate_tangent(pts, cx, cy, radius=10):
 
     return x1 - x0, y1 - y0
 
-# ======================================================
-# Display
-# ======================================================
+def is_vertical_edge_block(name):
+    return name in ("full", "shelf", "trapdoor_open")
 
-def block_to_unicode(name, pat):
+def is_horizontal_edge_block(name):
+    return name in ("full", "slab", "trapdoor_closed")
 
-    H = len(pat)
-    W = len(pat[0])
+def smooth_stair_edges(blocks, bmp, pts, max_extra_error=6):
+    """
+    Replace repeated stairs with continuation blocks
+    to keep edges smooth (vertical + horizontal).
+    """
 
-    # Remember: pat is Y-down, output is Y-up
+    h = len(blocks)
+    w = len(blocks[0])
 
-    top_rows = pat[H//2:]      # visually top
-    bottom_rows = pat[:H//2]   # visually bottom
+    TILE = 6
 
-    left_cols = [row[:W//2] for row in pat]
-    right_cols = [row[W//2:] for row in pat]
-
-    def count(block):
-        return sum(sum(row) for row in block)
-
-    top_fill = count(top_rows)
-    bottom_fill = count(bottom_rows)
-    left_fill = count(left_cols)
-    right_fill = count(right_cols)
 
     # ----------------------------------
-    # Empty
+    # Extract bitmap tile
     # ----------------------------------
-    if name == "empty":
-        return " "
+
+    def get_tile(y, x):
+
+        by = y * TILE
+        bx = x * TILE
+
+        return [
+            [
+                bmp[by + dy][bx + dx]
+                if by + dy < len(bmp) and bx + dx < len(bmp[0])
+                else 0
+                for dx in range(TILE)
+            ]
+            for dy in range(TILE)
+        ]
+
 
     # ----------------------------------
-    # Full
+    # Error metric
     # ----------------------------------
-    if name == "full":
-        return "█"
+
+    def tile_error(tile, pat):
+
+        err = 0
+
+        for yy in range(6):
+            for xx in range(6):
+                if tile[yy][xx] != pat[yy][xx]:
+                    err += 1
+
+        return err
+
 
     # ----------------------------------
-    # Slab (top / bottom)
+    # Try replacement helper
     # ----------------------------------
-    if name == "slab":
 
-        if bottom_fill > top_fill:
-            return "▄"   # bottom slab
-        else:
-            return "▀"   # top slab
+    def try_replace(y, x, allowed_blocks):
 
-    # ----------------------------------
-    # Closed trapdoor (top / bottom)
-    # ----------------------------------
-    if name == "trapdoor_closed":
+        name_mid, pat_mid = blocks[y][x]
 
-        if bottom_fill > top_fill:
-            return "▁"   # bottom thin
-        else:
-            return "▔"   # top thin
+        tile = get_tile(y, x)
 
-    # ----------------------------------
-    # Shelf (left / right)
-    # ----------------------------------
-    if name == "shelf":
+        old_err = tile_error(tile, pat_mid)
 
-        if left_fill > right_fill:
-            return "▍"
-        else:
-            return "▐"
+        best = None
+        best_err = 10**9
 
-    # ----------------------------------
-    # Open trapdoor (left / right)
-    # ----------------------------------
-    if name == "trapdoor_open":
+        for name, pat in BLOCK_LIBRARY:
 
-        if left_fill > right_fill:
-            return "▏"
-        else:
-            return "▕"
+            if name not in allowed_blocks:
+                continue
 
-    # ----------------------------------
-    # Stair (quadrants)
-    # ----------------------------------
-    if name == "stair":
+            err = tile_error(tile, pat)
 
-        # Quadrants (remember Y flip)
-        tl = pat[-1][0]
-        tr = pat[-1][-1]
-        bl = pat[0][0]
-        br = pat[0][-1]
+            if err < best_err:
+                best = (name, pat)
+                best_err = err
 
-        if bl and not br:
-            return "▛"
-        if br and not bl:
-            return "▜"
-        if tl and not tr:
-            return "▙"
-        if tr and not tl:
-            return "▟"
+        if best and best_err <= old_err + max_extra_error:
+            blocks[y][x] = best
 
-        return "█"
 
-    # ----------------------------------
-    # Fallback
-    # ----------------------------------
-    return "?"
+    # ==================================================
+    # 1) Vertical smoothing
+    # ==================================================
+
+    for y in range(1, h - 1):
+        for x in range(w):
+
+            name_above, _ = blocks[y - 1][x]
+            name_mid, _ = blocks[y][x]
+            name_below, _ = blocks[y + 1][x]
+
+            # A, stair, stair
+            if (
+                is_vertical_edge_block(name_above)
+                and name_mid == "stair"
+                and name_below == "stair"
+            ):
+
+                try_replace(
+                    y, x,
+                    ("full", "shelf", "trapdoor_open")
+                )
+
+
+    # ==================================================
+    # 2) Horizontal smoothing
+    # ==================================================
+
+    for y in range(h):
+        for x in range(1, w - 1):
+
+            name_left, _ = blocks[y][x - 1]
+            name_mid, _ = blocks[y][x]
+            name_right, _ = blocks[y][x + 1]
+
+            # A, stair, stair
+            if (
+                is_horizontal_edge_block(name_left)
+                and name_mid == "stair"
+                and name_right == "stair"
+            ):
+
+                try_replace(
+                    y, x,
+                    ("full", "slab", "trapdoor_closed")
+                )
+
 
 def get_block_orientation(name, pat):
     """
@@ -685,7 +713,7 @@ UNICODE_MAP = {
     ("full", "none"): "█",
 
     ("slab", "bottom"): "▄",
-    ("slab", "top"): "▔",
+    ("slab", "top"): "▀",
 
     ("trapdoor_closed", "bottom"): "▁",
     ("trapdoor_closed", "top"): "▔",
@@ -958,21 +986,65 @@ def print_blocks(blocks, offset, char_map, theme_colors,
     print(pad + "".join(marker))
     print(pad + "".join(label))
 
+    print_legend(char_map, theme_colors, use_color)
 
-    # --------------------------------------------------
-    # Legend
-    # --------------------------------------------------
+
+def print_legend(char_map, theme_colors, use_color):
+    """
+    Print legend based on active character map and colors.
+    """
+
+    # Order we want to show blocks
+    order = [
+        "full",
+        "slab",
+        "shelf",
+        "stair",
+        "trapdoor_open",
+        "trapdoor_closed",
+    ]
+
+    # Friendly names
+    names = {
+        "full": "Full block",
+        "slab": "Slab",
+        "shelf": "Shelf",
+        "stair": "Stair",
+        "trapdoor_open": "Open trapdoor",
+        "trapdoor_closed": "Closed trapdoor",
+    }
 
     print("\nLegend:")
-    print("█  Full")
-    print("▄▔ Slab")
-    print("▁▔ Closed Trapdoor")
-    print("▍▐ Shelf")
-    print("▏▕ Open Trapdoor")
-    print("▙▛▜▟ Stair")
-    print("│  Vertical grid")
-    print("═  Horizontal grid")
-    print("╪  Intersection")
+
+    for block in order:
+
+        chars = []
+
+        # Collect all variants for this block
+        for (name, orient), ch in char_map.items():
+
+            if name != block:
+                continue
+
+            if ch == " ":
+                continue
+
+            # Colorize if needed
+            if use_color:
+
+                color = theme_colors.get(name, "")
+                reset = ANSI_RESET if color else ""
+
+                ch = f"{color}{ch}{reset}"
+
+            chars.append(ch)
+
+        if not chars:
+            continue
+
+        sym = " ".join(sorted(set(chars)))
+
+        print(f"{sym:8} {names[block]}")
 
 # ======================================================
 # CLI
@@ -1034,6 +1106,9 @@ def main():
     bmp, offx, offy = pixels_to_bitmap(pixels)
 
     blocks = bitmap_to_blocks(bmp, pts)
+
+    # Smooth ugly stair edges
+    smooth_stair_edges(blocks, bmp, pts)
 
     # Store offsets for printing
     offset = (offx, offy)
